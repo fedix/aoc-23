@@ -3,11 +3,6 @@ package Day2
 
 import math.max
 
-enum Color:
-  case R, G, B
-
-case class Constraint(red: Int, green: Int, blue: Int)
-
 case class CubeSet(red: Int, green: Int, blue: Int) {
   def power: Int = red * green * blue
 }
@@ -34,7 +29,7 @@ def parseSet(raw: String): CubeSet =
       case s"$n blue"  => acc.copy(blue = n.toInt)
   }
 
-val constraint = Constraint(red = 12, green = 13, blue = 14)
+val constraint = CubeSet(red = 12, green = 13, blue = 14)
 
 def solve1(input: List[String]): Int =
   input
