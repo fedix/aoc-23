@@ -7,5 +7,5 @@ def readInput(path: String): List[String] =
   Using(Source.fromResource(path))(_.getLines().toList).get
 
 @main def hello: Unit =
-  val input = readInput("3.txt")
-  List(Day3.solve1(input), Day3.solve2(input)).foreach(println)
+  val input = readInput("4.txt")
+  List(Day4.solve1(input), Day4.solve2(input)).foreach(println)
