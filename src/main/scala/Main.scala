@@ -2,7 +2,6 @@ import days.*
 
 import scala.io.Source
 import scala.util.Using
-import scala.util.chaining.*
 
 def readInput(path: String): List[String] =
   Using(Source.fromResource(path))(_.getLines().toList).get

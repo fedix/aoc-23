@@ -2,8 +2,6 @@ package days
 
 import scala.util.chaining.*
 
-import scala.compiletime.ops.string
-
 object Day1 {
   val digitMapping = Map(
     "one" -> '1',
@@ -37,24 +35,22 @@ object Day1 {
           number <- s"$first$last".toIntOption
         } yield number
       )
-      .reduce(_ + _)
+      .sum
 
   def solve2(lines: List[String]) =
-    lines
-      .flatMap { line =>
-        val spelledDigits = digitMapping.keySet.filter(line.contains)
-        val digits =
-          List(line.find(_.isDigit), line.findLast(_.isDigit)).flatten
+    lines.flatMap { line =>
+      val spelledDigits = digitMapping.keySet.filter(line.contains)
+      val digits =
+        List(line.find(_.isDigit), line.findLast(_.isDigit)).flatten
 
-        val allDigits =
-          digits.flatMap(ch => indexesOf(line)(ch.toString).map(_ -> ch)) ++
-            spelledDigits
-              .flatMap(d => indexesOf(line)(d).map(_ -> digitMapping(d)))
+      val allDigits =
+        digits.flatMap(ch => indexesOf(line)(ch.toString).map(_ -> ch)) ++
+          spelledDigits
+            .flatMap(d => indexesOf(line)(d).map(_ -> digitMapping(d)))
 
-        val (_, first) = allDigits.minBy(_._1)
-        val (_, last) = allDigits.maxBy(_._1)
+      val (_, first) = allDigits.minBy(_._1)
+      val (_, last) = allDigits.maxBy(_._1)
 
-        s"$first$last".toIntOption
-      }
-      .reduce(_ + _)
+      s"$first$last".toIntOption
+    }.sum
 }

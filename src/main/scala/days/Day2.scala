@@ -16,10 +16,11 @@ case class Game(
     sets: List[CubeSet]
 )
 
-def parseGame(raw: String): Game =
+def parseGame(raw: String): Option[Game] =
   raw match
     case s"Game $id: ${sets}" =>
-      Game(id.toInt, sets.split(';').map(parseSet).toList)
+      Some(Game(id.toInt, sets.split(';').map(parseSet).toList))
+    case _ => None
 
 def parseSet(raw: String): CubeSet =
   raw.split(',').foldLeft(CubeSet.zeros) { (acc, str) =>
@@ -33,17 +34,18 @@ val constraint = CubeSet(red = 12, green = 13, blue = 14)
 
 def solve1(input: List[String]): Int =
   input
-    .map(parseGame)
+    .flatMap(parseGame)
     .filter { game =>
       game.sets.forall(set =>
         set.red <= constraint.red && set.blue <= constraint.blue && set.green <= constraint.green
       )
     }
-    .foldLeft(0)((acc, g) => acc + g.id)
+    .map(_.id)
+    .sum
 
 def solve2(input: List[String]): Int =
   input
-    .map(parseGame)
+    .flatMap(parseGame)
     .map { game =>
       game.sets.reduce { (cs1, cs2) =>
         CubeSet(
@@ -54,4 +56,4 @@ def solve2(input: List[String]): Int =
       }
     }
     .map(_.power)
-    .reduce(_ + _)
+    .sum
