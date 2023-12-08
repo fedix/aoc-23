@@ -8,10 +8,5 @@ def readInput(path: String): List[String] =
   Using(Source.fromResource(path))(_.getLines().toList).get
 
 @main def hello: Unit =
-  readInput("2.txt")
-    .pipe(Day2.solve2)
-    .pipe(println)
-
-  // readInput("1-1.txt")
-  //   .pipe(Day1.solve2)
-  //   .pipe(println)
+  val input = readInput("3.txt")
+  List(Day3.solve1(input), Day3.solve2(input)).foreach(println)
