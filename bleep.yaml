@@ -1,0 +1,43 @@
+$schema: https://raw.githubusercontent.com/oyvindberg/bleep/master/schema.json
+$version: 0.0.3
+
+jvm:
+  name: graalvm-java17:22.2.0
+
+projects:
+  aoc-23:
+    folder: .
+
+    cross:
+      jvm:
+        platform:
+          name: jvm
+          jvmRuntimeOptions: -Duser.dir=${BUILD_DIR}
+
+      # unable to link
+      native:
+        platform:
+          name: native
+          nativeGc: immix
+          nativeMode: release
+          nativeVersion: 0.4.16
+        
+
+    platform:
+      mainClass: main
+
+    sbt-scope: main
+
+    scala:
+      options: -encoding utf8 -Wunused:all -Wvalue-discard -Xfatal-warnings -Ykind-projector -Ysafe-init
+        -deprecation -feature -language:implicitConversions -language:postfixOps -source
+        future-migration -unchecked
+      strict: true
+      version: 3.3.1
+
+  scripts:
+    dependencies: build.bleep::bleep-core:${BLEEP_VERSION}
+    platform:
+      name: jvm
+    scala:
+      version: 3.3.1

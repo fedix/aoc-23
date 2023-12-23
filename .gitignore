@@ -20,9 +20,11 @@ local.sbt
 
 # VS Code
 .vscode/
+.scala-build/
 
 # Metals
 .bloop/
+.bleep/
 .metals/
 metals.sbt
 
