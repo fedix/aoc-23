@@ -3,74 +3,69 @@ package Day5
 
 import scala.annotation.tailrec
 
-// case class Range(start: Long, length: Long) {
-//   def end = start + length
+case class Range(start: Long, length: Long) {
+  def end: Long = start + length
 
-//   def overlaps(other: Range) = {
-//     (start >= other.start && start <= other.end) || (end >= other.start && end <= other.end)
-//   }
-// }
+  def contains(n: Long): Boolean =
+    n >= start && n <= end
+
+  def overlaps(other: Range): Boolean =
+    contains(other.start) || contains(other.end) ||
+      other.contains(start) || other.contains(end)
+
+  // unsafe: should be used only for overlapping ranges
+  def splitWith(other: Range): List[Range] =
+    List(
+      Option.when(start < other.start)(Range(start, other.start - start)),
+      Option.when(end > other.end)(Range(other.end, end - other.end))
+    ).flatten
+}
 
 case class Segment(sourceStart: Long, destStart: Long, length: Long) {
-  def contains(n: Long): Boolean =
-    n >= sourceStart && (n <= sourceStart + length)
-
-  def invert = Segment(destStart, sourceStart, length)
+  def sourceRange: Range = Range(sourceStart, length)
 }
 
 object Segment {
   def applyMapping(src: Long): PartialFunction[Segment, Long] = {
-    case seg if seg.contains(src) =>
+    case seg if seg.sourceRange.contains(src) =>
       val offset = src - seg.sourceStart
       seg.destStart + offset
   }
 }
 
 enum Category:
-  case Seed, Soil, Fertilizer, Water, Light, Temperature, Humidity, Location
+  case seed, soil, fertilizer, water, light, temperature, humidity, location
 
-case class Mapping(source: Category, dest: Category, segments: List[Segment]) {
-  def invert = Mapping(dest, source, segments.map(_.invert))
-}
-
-object Mapping {
-  def combine(a: Mapping, b: Mapping): Mapping = ???
-}
+case class Mapping(source: Category, dest: Category, segments: List[Segment])
 
 type Almanac = List[Mapping]
 
 type Path = List[(Category, Long)]
+type RangePath = List[(Category, List[Range])]
 
 def parseSeeds(raw: String): List[Long] =
   raw.split(' ').flatMap(_.toLongOption).toList
 
-def parseSeedRanges(raw: String): List[Segment] =
-  raw
-    .split(' ')
-    .flatMap(_.toLongOption)
+def parseSeedRanges(raw: String): Iterator[Range] =
+  parseSeeds(raw)
     .grouped(2)
-    .map { case Array(start, length) => Segment(start, start, length) }
-    .toList
+    .map {
+      case start :: length :: Nil => Range(start, length)
+      case other => throw new Exception(s"Unexpected input ${other}")
+    }
 
 def parseMapping(raw: List[String]): Mapping = {
   val (source, dest) = raw.head match {
     case s"${source}-to-${dest} map:" => source -> dest
-    case _                            => ???
   }
 
   val mapping = raw.tail
     .map(_.split(' ').map(_.toLong))
-    .map {
-      case Array(destStart, sourceStart, rangeLen) =>
-        Segment(sourceStart, destStart, rangeLen)
-      case _ => ???
+    .map { case Array(destStart, sourceStart, rangeLen) =>
+      Segment(sourceStart, destStart, rangeLen)
     }
 
-  Mapping(
-    Category.valueOf(source.capitalize),
-    Category.valueOf(dest.capitalize),
-    mapping
-  )
+  Mapping(Category.valueOf(source), Category.valueOf(dest), mapping)
 }
 
 @tailrec
@@ -87,8 +82,40 @@ def map1(source: Long, mapping: Mapping): Long =
     .collectFirst(Segment.applyMapping(source))
     .getOrElse(source)
 
+def mapRange(sourceRange: Range, mapping: Mapping): List[Range] = {
+  val (mapped, unmapped) =
+    mapping.segments.foldLeft((List.empty[Range], List(sourceRange))) {
+      case ((accRanges, left), seg) =>
+        left match {
+          case Nil => accRanges -> left
+          case curRanges =>
+            val res = curRanges.map(applyMapping(_, seg))
+            (accRanges ::: res.flatMap(_._1), res.flatMap(_._2))
+        }
+    }
+  mapped ++ unmapped
+}
+
+def applyMapping(
+    sourceRange: Range,
+    seg: Segment
+): (Option[Range], List[Range]) = {
+  val mappingRange = seg.sourceRange
+  if (sourceRange.overlaps(mappingRange)) {
+    val start = sourceRange.start max mappingRange.start
+    val end = sourceRange.end min mappingRange.end
+    val len = end - start
+
+    val offset = start - mappingRange.start
+    val range = Range(seg.destStart + offset, len)
+
+    val left = sourceRange.splitWith(Range(start, len))
+
+    Some(range) -> left
+  } else None -> List(sourceRange)
+}
+
 def findLocation(sourceCat: Category, source: Long, almanac: Almanac): Path = {
-  println(s"find loc for ${sourceCat -> source}")
   @tailrec
   def go(sourceCat: Category, source: Long, acc: Path): Path =
     almanac.find(_.source == sourceCat) match
@@ -104,14 +131,32 @@ def findLocation(sourceCat: Category, source: Long, almanac: Almanac): Path = {
   go(sourceCat, source, List(sourceCat -> source))
 }
 
+def findLocationRange(
+    sourceCat: Category,
+    source: Range,
+    almanac: Almanac
+): RangePath = {
+
+  @tailrec
+  def go(sourceCat: Category, source: List[Range], acc: RangePath): RangePath =
+    almanac.find(_.source == sourceCat) match
+      case None => acc
+      case Some(mapping) =>
+        val mapped = source.flatMap(mapRange(_, mapping))
+
+        go(
+          mapping.dest,
+          mapped,
+          (mapping.dest -> mapped) :: acc
+        )
+
+  go(sourceCat, List(source), List(sourceCat -> List(source)))
+}
+
 def solve1(input: List[String]): Long = {
   val seeds = parseSeeds(input.head)
   val almanac = parseAlmanac(input.tail, List.empty)
-  val paths = seeds.map(seed => findLocation(Category.Seed, seed, almanac))
-
-  paths
-    .map(_.map(_._2).mkString(" <- "))
-    .foreach(println)
+  val paths = seeds.map(seed => findLocation(Category.seed, seed, almanac))
 
   paths
     .map(_.head._2)
@@ -119,5 +164,19 @@ def solve1(input: List[String]): Long = {
 }
 
 def solve2(input: List[String]): Long = {
-  0
+  val seedRanges = parseSeedRanges(input.head)
+  val almanac = parseAlmanac(input.tail, List.empty)
+  val paths =
+    seedRanges
+      .map(range => range -> findLocationRange(Category.seed, range, almanac))
+
+  val minLocationPath =
+    paths
+      .minBy((_, path) => path.head._2.map(_.start).min)
+      ._2
+
+  val minLocation = minLocationPath.head._2.map(_.start).min
+  minLocation
+
+  // 15290096
 }
