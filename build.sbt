@@ -23,5 +23,8 @@ lazy val root = project
       "-Ysafe-init",
       "-Ykind-projector"
     ),
-    libraryDependencies += "org.scalameta" %% "munit" % "0.7.29" % Test
+    libraryDependencies ++= Seq(
+      "org.typelevel" %% "cats-core" % "2.10.0",
+      "org.scalameta" %% "munit" % "0.7.29" % Test
+    )
   )

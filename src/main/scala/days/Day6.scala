@@ -18,12 +18,10 @@ def simulate(time: Long): List[Long] =
     .map(hold => (time - hold) * hold)
     .toList
 
-def solve1(input: List[String]): Long = {
-  val races = parseRaces(input)
-  races
+def solve1(input: List[String]): Long =
+  parseRaces(input)
     .map((time, distance) => simulate(time).count(_ > distance))
     .product
-}
 
 def solve2(input: List[String]): Long = {
   val (time, distance) = parseRace(input)
