@@ -25,6 +25,7 @@ lazy val root = project
     ),
     libraryDependencies ++= Seq(
       "org.typelevel" %% "cats-core" % "2.10.0",
+      "org.typelevel" %% "kittens" % "3.1.0",
       "org.scalameta" %% "munit" % "0.7.29" % Test
     )
   )
